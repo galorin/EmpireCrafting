@@ -1,0 +1,12 @@
+{
+  "name": "application",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@ag-grid-community/styles": "^32.3.5",
+    "ag-grid-community": "^34.1.1",
+    "ag-grid-react": "^34.1.1",
+    "mongodb": "^6.14.2"
+  }
+}

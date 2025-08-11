@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: 192.168.1.11:5000/empire-project-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://mongo-0.mongo.mongodb.svc.cluster.local:27017,mongo-1.mongo.mongodb.svc.cluster.local:27017,mongo-2.mongo.mongodb.svc.cluster.local:27017/?replicaSet=rs0"
+        - name: MONGODB_DATABASE
+          value: "empireExperiment"
+        - name: RUST_LOG
+          value: "debug"
