@@ -1,10 +1,49 @@
-# Empire Experiment
+# EmpireCrafting: A Full-Stack Learning Project
 
-This is a learning project for me to learn a new tech stack by implementing an inventory management and optimization application for the LARP, Empire by Profound Decisions.
+This repository showcases **EmpireCrafting**, a comprehensive full-stack application developed as a personal learning initiative to master a modern and in-demand technology stack. The project focuses on building an inventory management and optimization tool, inspired by the LARP, Empire by Profound Decisions.
 
-The idea for this is to be a NoSQL Database, built on MongoDB on the backend. The API will be built in Rust, with the frontend being written in React.
+## Project Highlights & Technology Stack
 
-This project is structured into two main directories:
+This project demonstrates proficiency across a diverse set of cutting-edge frameworks and technologies, including:
 
-*   **infrastructure/**: Contains Ansible playbooks for setting up the development environment as well as the json for initializing the database.
-*   **application/**: Contains the code for the "Hello World" application, including the Rust backend, the minimal JavaScript React frontend, and the database initialization script.
+*   **Frontend (React & Vite):**
+    *   **React.js:** A declarative, component-based JavaScript library for building dynamic and responsive user interfaces. This project leverages React for its efficient UI rendering and robust ecosystem.
+    *   **Vite:** A next-generation frontend tooling that provides an extremely fast development experience with features like instant server start and lightning-fast Hot Module Replacement (HMR).
+
+*   **Backend (Rust & Actix-Web):**
+    *   **Rust:** A systems programming language focused on safety, performance, and concurrency. The backend API is built with Rust, showcasing its capabilities for building reliable and high-performance services.
+    *   **Actix-Web:** A powerful, pragmatic, and extremely fast web framework for Rust. It's used here to build the RESTful API that serves data to the frontend.
+    *   **Tokio:** The foundational runtime for asynchronous Rust applications. Tokio powers the non-blocking I/O operations within the backend, ensuring efficient handling of concurrent requests.
+
+*   **Database (MongoDB):**
+    *   **MongoDB:** A popular NoSQL document database. This project utilizes MongoDB for flexible and scalable data storage, demonstrating experience with modern database solutions.
+
+*   **Deployment & Orchestration (Kubernetes):**
+    *   **Kubernetes (k3s):** An open-source container orchestration system for automating deployment, scaling, and management of containerized applications. The application is deployed to a k3s cluster, showcasing practical experience with cloud-native deployment strategies and infrastructure as code.
+
+## Project Structure
+
+The project is organized into two main directories:
+
+*   **`infrastructure/`**: Contains Ansible playbooks for environment setup, database initialization scripts, and Kubernetes deployment configurations (`.yaml` files) for both frontend and backend services.
+*   **`application/`**: Houses the core application code, including the Rust backend and the React frontend.
+
+## Learning Objectives
+
+This project served as a hands-on learning experience to:
+
+*   Deepen understanding of full-stack application development.
+*   Gain practical experience with asynchronous programming in Rust.
+*   Implement and manage a NoSQL database (MongoDB).
+*   Develop and deploy containerized applications using Docker and Kubernetes.
+*   Build responsive and interactive user interfaces with React.
+
+## Development Methodology
+
+A significant portion of this project was developed using a "vibe coding" methodology, allowing for rapid prototyping and exploration of new concepts. My 20 years of experience as a software developer were instrumental in identifying and resolving the architectural and implementation challenges inherent in this approach, ensuring the delivery of a robust and functional application.
+
+## Getting Started
+
+(Placeholder for future instructions on how to set up and run the project locally. This section would typically include steps for cloning the repository, installing dependencies, and starting the application.)
+
+---

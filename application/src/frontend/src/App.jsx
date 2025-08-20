@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import IngredientTable from './components/IngredientTable';
-import BestPotionsSection from './components/BestPotionsSection';
-import SelectedSetsManager from './components/SelectedSetsManager';
-import PotionDetailsSection from './components/PotionDetailsSection';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { fetchPotionSets, fetchPotionsInSet } from './utils/api';
+
+// Dynamically import components
+const IngredientTable = lazy(() => import('./components/IngredientTable'));
+const BestPotionsSection = lazy(() => import('./components/BestPotionsSection'));
+const SelectedSetsManager = lazy(() => import('./components/SelectedSetsManager'));
+const PotionDetailsSection = lazy(() => import('./components/PotionDetailsSection'));
+const About = lazy(() => import('./components/About'));
 
 function App() {
   const [potionSets, setPotionSets] = useState([]);
@@ -13,6 +16,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSets, setSelectedSets] = useState([]);
+  const [activeTab, setActiveTab] = useState('main'); // New state for active tab
 
   const handleDataFetched = useCallback((fetchedIngredients) => {
     setIngredients(fetchedIngredients);
@@ -86,31 +90,56 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Potion Sets Section (Known Potions) */}
-      <div className="potion-sets-section">
-        <SelectedSetsManager
-          potionSets={potionSets}
-          setPotionsInSet={setPotionsInSet}
-          selectedSets={selectedSets}
-          onSetSelect={handleSetSelect}
-          potionsInSet={potionsInSet}
-          ingredients={ingredients}
-        />
+      <div className="tabs">
+        <button
+          className={`tab-link ${activeTab === 'main' ? 'active' : ''}`}
+          onClick={() => setActiveTab('main')}
+        >
+          Main Application
+        </button>
+        <button
+          className={`tab-link ${activeTab === 'about' ? 'active' : ''}`}
+          onClick={() => setActiveTab('about')}
+        >
+          About
+        </button>
       </div>
 
-      {/* Ingredients Section (Inventory) */}
-      <div className="ingredients-section">
-        <IngredientTable onDataFetched={handleDataFetched} />
-      </div>
+      <div className="tab-content">
+        <Suspense fallback={<div className="loading-message">Loading application...</div>}>
+          {activeTab === 'main' && (
+            <>
+              {/* Potion Sets Section (Known Potions) */}
+              <div className="potion-sets-section">
+                <SelectedSetsManager
+                  potionSets={potionSets}
+                  setPotionsInSet={setPotionsInSet}
+                  selectedSets={selectedSets}
+                  onSetSelect={handleSetSelect}
+                  potionsInSet={potionsInSet}
+                  ingredients={ingredients}
+                />
+              </div>
 
-      {/* Recommended Sets Section (Best Potions and Potion Details) */}
-      <div className="recommended-sets-container">
-        <div className="best-potions-section-container">
-          <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
-        </div>
-        <div className="potion-details-section">
-          <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
-        </div>
+              {/* Ingredients Section (Inventory) */}
+              <div className="ingredients-section">
+                <IngredientTable onDataFetched={handleDataFetched} />
+              </div>
+
+              {/* Recommended Sets Section (Best Potions and Potion Details) */}
+              <div className="recommended-sets-container">
+                <div className="best-potions-section-container">
+                  <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
+                </div>
+                <div className="potion-details-section">
+                  <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'about' && <About />}
+        </Suspense>
       </div>
     </div>
   );

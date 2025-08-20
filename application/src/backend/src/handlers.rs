@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Result, error};
+use actix_web::{get, post, web, Result, error, HttpResponse};
 use mongodb::Client;
 use crate::models::{PotionNames, PotionSets, PotionsResponse, IngredientsResponse, Potion, Ingredient, PotionSet};
 use crate::db::{fetch_and_extract};
@@ -6,6 +6,8 @@ use std::collections::HashMap;
 use mongodb::bson::{doc, Document};
 use serde_json;
 use serde::Deserialize;
+use std::fs;
+use std::path::PathBuf;
 
 
 #[get("/api/potions/names")]
@@ -78,4 +80,23 @@ pub async fn update_ingredient_price(client: web::Data<Client>, req: web::Json<U
     }
 
     Ok(web::Json(serde_json::json!({ "message": "Ingredient price updated successfully" })))
+}
+
+#[get("/api/about")]
+pub async fn get_about_content() -> Result<HttpResponse> {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // Navigate up to the project root. Assuming backend is in application/src/backend
+    // So, we need to go up three levels: backend -> src -> application -> project_root
+    path.pop(); // removes backend
+    path.pop(); // removes src
+    path.pop(); // removes application
+    path.push("README.md"); // adds README.md
+
+    let readme_content = fs::read_to_string(&path)
+        .map_err(|e| {
+            eprintln!("Failed to read README.md: {:?}", e);
+            error::ErrorInternalServerError("Failed to read about content")
+        })?;
+
+    Ok(HttpResponse::Ok().content_type("text/plain").body(readme_content))
 }

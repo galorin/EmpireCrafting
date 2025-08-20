@@ -37,6 +37,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_all_potions)
             .service(get_ingredients)
             .service(update_ingredient_price)
+            .service(get_about_content)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
