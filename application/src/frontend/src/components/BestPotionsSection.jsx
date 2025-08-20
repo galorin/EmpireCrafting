@@ -1,5 +1,6 @@
+import React, { useState } from 'react';
 import { calculatePotionProfit, canMakePotion, consumeIngredients, calculateMarketValueScore, calculateMaxPotions } from '../utils/potionCalculations';
-import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 const PotionList = ({ potions, ingredients, expandedPotionId, togglePotionDetails }) => (
   <div className="potions-accordion">
@@ -23,6 +24,13 @@ const PotionList = ({ potions, ingredients, expandedPotionId, togglePotionDetail
     ))}
   </div>
 );
+
+PotionList.propTypes = {
+  potions: PropTypes.array.isRequired,
+  ingredients: PropTypes.array.isRequired,
+  expandedPotionId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  togglePotionDetails: PropTypes.func.isRequired,
+};
 
 const AuditLog = ({ potions, ingredients, initialInventory }) => {
   const ingredientsUsed = {};
@@ -69,6 +77,12 @@ const AuditLog = ({ potions, ingredients, initialInventory }) => {
       </div>
     </div>
   );
+};
+
+AuditLog.propTypes = {
+  potions: PropTypes.array.isRequired,
+  ingredients: PropTypes.array.isRequired,
+  initialInventory: PropTypes.object.isRequired,
 };
 
 const BestPotionsSection = ({ potions, ingredients, inventory }) => {
@@ -188,6 +202,12 @@ const BestPotionsSection = ({ potions, ingredients, inventory }) => {
       </div>
     </div>
   );
+};
+
+BestPotionsSection.propTypes = {
+  potions: PropTypes.array.isRequired,
+  ingredients: PropTypes.array.isRequired,
+  inventory: PropTypes.object.isRequired,
 };
 
 export default BestPotionsSection;

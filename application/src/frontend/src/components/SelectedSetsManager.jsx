@@ -1,5 +1,6 @@
 // src/components/SelectedSetsManager.jsx
 import React, { useEffect, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import PotionSetsTable from './PotionSetsTable';
 import { fetchPotionsInSet } from '../utils/api';
 
@@ -48,6 +49,14 @@ const SelectedSetsManager = ({ potionSets, setPotionsInSet, selectedSets, onSetS
       )}
     </div>
   );
+};
+SelectedSetsManager.propTypes = {
+  potionSets: PropTypes.array.isRequired,
+  setPotionsInSet: PropTypes.func.isRequired,
+  selectedSets: PropTypes.array.isRequired,
+  onSetSelect: PropTypes.func.isRequired,
+  potionsInSet: PropTypes.array.isRequired,
+  ingredients: PropTypes.array.isRequired,
 };
 
 export default SelectedSetsManager;

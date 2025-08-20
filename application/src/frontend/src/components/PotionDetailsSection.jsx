@@ -1,9 +1,10 @@
 // src/components/PotionDetailsSection.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 import { calculatePotionCost } from '../utils/potionCalculations';
 import IngredientList from './IngredientList';
 
-const PotionDetailsSection = React.memo(({ potionsInSet, ingredients }) => {
+const PotionDetailsSection = React.memo(function PotionDetailsSection({ potionsInSet, ingredients }) {
   return (
     <div className="potion-details-section">
       <h2 className="section-heading">Potions in selected sets</h2>
@@ -31,5 +32,12 @@ const PotionDetailsSection = React.memo(({ potionsInSet, ingredients }) => {
     </div>
   );
 });
+
+PotionDetailsSection.displayName = 'PotionDetailsSection';
+
+PotionDetailsSection.propTypes = {
+  potionsInSet: PropTypes.arrayOf(PropTypes.object).isRequired,
+  ingredients: PropTypes.object.isRequired,
+};
 
 export default PotionDetailsSection;

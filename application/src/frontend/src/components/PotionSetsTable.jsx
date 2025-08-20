@@ -1,8 +1,9 @@
 // src/components/PotionSetsTable.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 import { calculatePotionCost, calculatePotionProfit } from '../utils/potionCalculations';
 
-const PotionSetsTable = React.memo(({ potionSets, selectedSets, handleSetSelect, checkboxRefs, potionsInSet, ingredients }) => {
+const PotionSetsTable = React.memo(function PotionSetsTable({ potionSets, selectedSets, handleSetSelect, checkboxRefs, potionsInSet, ingredients }) {
   return (
     <table className="potion-sets-table">
       <thead className="potion-sets-table-header">
@@ -64,5 +65,28 @@ const PotionSetsTable = React.memo(({ potionSets, selectedSets, handleSetSelect,
     </table>
   );
 });
+
+PotionSetsTable.displayName = 'PotionSetsTable';
+
+PotionSetsTable.propTypes = {
+  potionSets: PropTypes.arrayOf(PropTypes.shape({
+    Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    Name: PropTypes.string.isRequired,
+    Description: PropTypes.string,
+  })).isRequired,
+  selectedSets: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  ).isRequired,
+  handleSetSelect: PropTypes.func.isRequired,
+  checkboxRefs: PropTypes.shape({
+    current: PropTypes.object.isRequired,
+  }).isRequired,
+  potionsInSet: PropTypes.arrayOf(PropTypes.shape({
+    Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    Name: PropTypes.string.isRequired,
+    SetId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  })).isRequired,
+  ingredients: PropTypes.array.isRequired,
+};
 
 export default PotionSetsTable;
