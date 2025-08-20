@@ -1,0 +1,135 @@
+---
+- name: Set up a development environment on a clean Ubuntu 24.04 system
+  hosts: localhost
+  connection: local
+  become: true
+  vars:
+    node_version: "20"
+    rust_toolchain: stable
+    mongodb_version: "8.0"
+    mongodb_repo_url: "https://repo.mongodb.org/apt/ubuntu"
+    project_owner: "sarah"
+    project_dir: "/home/sarah/git/empireProject/application"
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+
+    - name: Install essential system packages
+      apt:
+        name:
+          - build-essential
+          - curl
+          - wget
+          - git
+          - apt-transport-https
+          - ca-certificates
+        state: present
+
+    - name: Disable swap
+      command: swapoff -a
+      changed_when: false
+
+    - name: Comment out swap in /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^(\s*\/swap\s+swap)'
+        line: '# \1'
+        state: present
+
+    - name: Import MongoDB GPG key
+      shell: curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+      args:
+        creates: /usr/share/keyrings/mongodb-server-8.0.gpg
+
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg] {{ mongodb_repo_url }} noble/mongodb-org/{{ mongodb_version }} multiverse"
+        state: present
+        filename: mongodb
+        validate_certs: yes
+
+    - name: Install MongoDB
+      apt:
+        name:
+          - mongodb-org
+        state: present
+
+    - name: Ensure MongoDB service is started and enabled
+      service:
+        name: mongod
+        state: started
+        enabled: yes
+
+    - name: Run NodeSource setup script
+      shell: curl -fsSL https://deb.nodesource.com/setup_{{ node_version }}.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js and npm
+      apt:
+        name:
+          - nodejs
+        state: present
+
+    - name: Install rustup
+      apt:
+        name:
+          - rustup
+        state: present
+
+    - name: Check if cargo is installed
+      command: cargo --version
+      register: cargo_check
+      failed_when: cargo_check.rc != 0 and cargo_check.rc != 101
+
+    - name: Install Rust using rustup
+      shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain={{ rust_toolchain }}
+
+    - name: Set Rust cargo directory in PATH
+      lineinfile:
+        path: /home/{{project_owner}}/.bashrc
+        line: 'export PATH="$HOME/.cargo/bin:$PATH"'
+        create: yes
+
+    - name: Source bashrc to update PATH
+      shell: source /home/{{project_owner}}/.bashrc
+      changed_when: false
+      when: cargo_check.rc == 101
+
+    - name: Check if yarn is installed
+      command: yarn --version
+      register: yarn_check
+      ignore_errors: true
+
+    - name: Install yarn globally
+      npm:
+        name: yarn
+        global: yes
+      when: yarn_check.rc != 0
+
+    - name: Create the project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+        owner: "{{project_owner}}"
+
+    - name: Ensure project is ready for development (backend)
+      file:
+        path: "{{ project_dir }}/backend"
+        state: directory
+        mode: '0755'
+        owner: "{{project_owner}}"
+    - name: Ensure project is ready for development (frontend)
+      file:
+        path: "{{ project_dir }}/frontend"
+        state: directory
+        mode: '0755'
+        owner: "{{project_owner}}"
