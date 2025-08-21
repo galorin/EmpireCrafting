@@ -154,19 +154,8 @@ th, .potion-sets-table-header-cell {
   transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
 .potion-sets-table input[type="checkbox"]:checked {
-  background-color: var(--color-highlight);
-  border-color: var(--color-highlight-hover);
-}
-.potion-sets-table input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 7px;
-  width: 8px;
-  height: 14px;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg);
+  background: radial-gradient(circle, #e0ffff, #87ceeb);
+  border-color: #87ceeb;
 }
 
 /* INGREDIENT TABLE / AG GRID */
