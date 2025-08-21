@@ -105,42 +105,40 @@ function App() {
         </button>
       </div>
 
-      <div className="tab-content">
-        <Suspense fallback={<div className="loading-message">Loading application...</div>}>
-          {activeTab === 'main' && (
-            <>
-              {/* Potion Sets Section (Known Potions) */}
-              <div className="potion-sets-section">
-                <SelectedSetsManager
-                  potionSets={potionSets}
-                  setPotionsInSet={setPotionsInSet}
-                  selectedSets={selectedSets}
-                  onSetSelect={handleSetSelect}
-                  potionsInSet={potionsInSet}
-                  ingredients={ingredients}
-                />
-              </div>
+      <Suspense fallback={<div className="loading-message">Loading application...</div>}>
+        {activeTab === 'main' && (
+          <>
+            {/* Potion Sets Section (Known Potions) */}
+            <div className="potion-sets-section">
+              <SelectedSetsManager
+                potionSets={potionSets}
+                setPotionsInSet={setPotionsInSet}
+                selectedSets={selectedSets}
+                onSetSelect={handleSetSelect}
+                potionsInSet={potionsInSet}
+                ingredients={ingredients}
+              />
+            </div>
 
-              {/* Ingredients Section (Inventory) */}
-              <div className="ingredients-section">
-                <IngredientTable onDataFetched={handleDataFetched} />
-              </div>
+            {/* Ingredients Section (Inventory) */}
+            <div className="ingredients-section">
+              <IngredientTable onDataFetched={handleDataFetched} />
+            </div>
 
-              {/* Recommended Sets Section (Best Potions and Potion Details) */}
-              <div className="recommended-sets-container">
-                <div className="best-potions-section-container">
-                  <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
-                </div>
-                <div className="potion-details-section">
-                  <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
-                </div>
+            {/* Recommended Sets Section (Best Potions and Potion Details) */}
+            <div className="recommended-sets-container">
+              <div className="best-potions-section-container">
+                <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
               </div>
-            </>
-          )}
+              <div className="potion-details-section">
+                <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
+              </div>
+            </div>
+          </>
+        )}
 
-          {activeTab === 'about' && <About />}
-        </Suspense>
-      </div>
+        {activeTab === 'about' && <About />}
+      </Suspense>
     </div>
   );
 }

@@ -91,7 +91,7 @@ const IngredientTable = ({ onDataFetched }) => {
       {loading ? (
         <p className="loading-message">Loading Ingredients...</p>
       ) : (
-        <div className="ag-theme-alpine" style={{ height: 400, width: '90%' }}>
+        <div className="ingredient-table-container ag-theme-alpine">
           <AgGridReact
             rowData={rowData}
             columnDefs={columns}
