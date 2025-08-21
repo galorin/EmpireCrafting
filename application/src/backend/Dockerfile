@@ -3,7 +3,7 @@ FROM rust:1.82 AS builder
 
 WORKDIR /usr/src/app
 
-COPY . .
+COPY application/src/backend/ ./ 
 
 RUN cargo install --path .
 

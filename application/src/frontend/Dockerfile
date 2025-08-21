@@ -3,11 +3,11 @@ FROM node:20 AS builder
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+COPY application/src/frontend/package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY application/src/frontend/ .
 
 # Add ARG and ENV for VITE_API_BASE_URL
 ARG VITE_API_BASE_URL
