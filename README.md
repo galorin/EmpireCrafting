@@ -44,6 +44,6 @@ A significant portion of this project was developed using a "vibe coding" method
 
 ## Getting Started
 
-(Placeholder for future instructions on how to set up and run the project locally. This section would typically include steps for cloning the repository, installing dependencies, and starting the application.)
+This should be talking about how to recreate this and set it up on oyur own machine but I have no clue what to tell you other than git clone, spin up k3s, and try to build the Docker images. This is built around a local Docker repo, wom't be found on public repos.
 
 ---
