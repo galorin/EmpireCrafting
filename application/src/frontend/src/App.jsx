@@ -7,16 +7,33 @@ const BestPotionsSection = lazy(() => import('./components/BestPotionsSection'))
 const SelectedSetsManager = lazy(() => import('./components/SelectedSetsManager'));
 const PotionDetailsSection = lazy(() => import('./components/PotionDetailsSection'));
 const About = lazy(() => import('./components/About'));
+const LegalPopup = lazy(() => import('./components/LegalPopup'));
 
 function App() {
   const [potionSets, setPotionSets] = useState([]);
   const [potionsInSet, setPotionsInSet] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const [inventory, setInventory] = useState({});
+  const [inventory, setInventory] = useState(() => {
+    const savedInventory = localStorage.getItem('inventory');
+    return savedInventory ? JSON.parse(savedInventory) : {};
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSets, setSelectedSets] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // New state for active tab
+  const [showLegalPopup, setShowLegalPopup] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem('hasConsentedToLocalStorage');
+    if (!consent) {
+      setShowLegalPopup(true);
+    }
+  }, []);
+
+  const handleAcceptLegal = () => {
+    localStorage.setItem('hasConsentedToLocalStorage', 'true');
+    setShowLegalPopup(false);
+  };
 
   const handleDataFetched = useCallback((fetchedIngredients) => {
     setIngredients(fetchedIngredients);
@@ -24,7 +41,12 @@ function App() {
     fetchedIngredients.forEach(ingredient => {
       newInventory[ingredient.Id] = ingredient.SessionInventory;
     });
-    setInventory(newInventory);
+
+    const savedInventory = localStorage.getItem('inventory');
+    if (!savedInventory) {
+      localStorage.setItem('inventory', JSON.stringify(newInventory));
+      setInventory(newInventory);
+    }
   }, []);
 
   // Fetch Potion Sets
