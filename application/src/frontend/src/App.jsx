@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { fetchPotionSets, fetchPotionsInSet } from './utils/api';
+import { fetchPotionSets, fetchPotionsInSet, fetchIngredients } from './utils/api';
 
 // Dynamically import components
 const IngredientTable = lazy(() => import('./components/IngredientTable'));
@@ -41,6 +41,11 @@ function App() {
     fetchedIngredients.forEach(ingredient => {
       newInventory[ingredient.Id] = ingredient.SessionInventory;
     });
+
+    const savedIngredients = localStorage.getItem('ingredients');
+    if (!savedIngredients) {
+      localStorage.setItem('ingredients', JSON.stringify(fetchedIngredients));
+    }
 
     const savedInventory = localStorage.getItem('inventory');
     if (!savedInventory) {
@@ -90,6 +95,21 @@ function App() {
     fetchPotions();
   }, [selectedSets, inventory]); // Re-run when selectedSets or inventory changes
 
+  useEffect(() => {
+    const hasConsented = localStorage.getItem('hasConsentedToLocalStorage') === 'true';
+    if (!showLegalPopup && hasConsented) {
+      const loadIngredients = async () => {
+        try {
+          const ingredientsData = await fetchIngredients();
+          handleDataFetched(ingredientsData);
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+      loadIngredients();
+    }
+  }, [showLegalPopup, handleDataFetched]);
+
   // Handle Set Selection
   const handleSetSelect = useCallback((setId) => {
     setSelectedSets((prevSelectedSets) => {
@@ -128,6 +148,7 @@ function App() {
       </div>
 
       <Suspense fallback={<div className="loading-message">Loading application...</div>}>
+        {showLegalPopup && <LegalPopup onAccept={handleAcceptLegal} />}
         {activeTab === 'main' && (
           <>
             {/* Potion Sets Section (Known Potions) */}
@@ -144,7 +165,7 @@ function App() {
 
             {/* Ingredients Section (Inventory) */}
             <div className="ingredients-section">
-              <IngredientTable onDataFetched={handleDataFetched} />
+              <IngredientTable ingredients={ingredients} onDataFetched={handleDataFetched} />
             </div>
 
             {/* Recommended Sets Section (Best Potions and Potion Details) */}

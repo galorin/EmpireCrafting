@@ -12,14 +12,15 @@ use std::path::PathBuf;
 
 #[get("/api/potions/names")]
 pub async fn get_potion_names(client: web::Data<Client>) -> Result<web::Json<PotionNames>> {
-    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", None).await?;
+    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", None, None).await?;
     let names: Vec<String> = potions.iter().map(|potion| potion.name.clone()).collect();
     Ok(web::Json(PotionNames { names }))
 }
 
 #[get("/api/potionsets")]
 pub async fn get_potion_sets(client: web::Data<Client>) -> Result<web::Json<PotionSets>> {
-    let sets: Vec<PotionSet> = fetch_and_extract(&client.clone(), "PotionSets", None).await?;
+    let sort = doc! { "Id": 1 };
+    let sets: Vec<PotionSet> = fetch_and_extract(&client.clone(), "PotionSets", None, Some(sort)).await?;
     Ok(web::Json(PotionSets { sets }))
 }
 
@@ -28,19 +29,19 @@ pub async fn get_potions_by_set(client: web::Data<Client>, web::Query(query): we
     let set_id_str = query.get("set_id").ok_or_else(|| error::ErrorBadRequest("Missing set_id"))?;
     let set_id: i32 = set_id_str.parse().map_err(|_| error::ErrorBadRequest("Invalid set_id"))?;
     let filter = doc! { "PotionSetId": set_id };
-    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", Some(filter)).await?;
+    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", Some(filter), None).await?;
     Ok(web::Json(PotionsResponse { potions }))
 }
 
 #[get("/api/potions/all")]
 pub async fn get_all_potions(client: web::Data<Client>) -> Result<web::Json<PotionsResponse>> {
-    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", None).await?;
+    let potions: Vec<Potion> = fetch_and_extract(&client.clone(), "Potions", None, None).await?;
     Ok(web::Json(PotionsResponse { potions }))
 }
 
 #[get("/api/ingredients")]
 pub async fn get_ingredients(client: web::Data<Client>) -> Result<web::Json<IngredientsResponse>> {
-    let ingredients: Vec<Ingredient> = fetch_and_extract(&client.clone(), "Ingredients", None).await?;
+    let ingredients: Vec<Ingredient> = fetch_and_extract(&client.clone(), "Ingredients", None, None).await?;
     Ok(web::Json(IngredientsResponse { ingredients })) 
 }
 
