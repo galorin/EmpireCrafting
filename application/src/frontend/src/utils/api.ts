@@ -1,4 +1,9 @@
 // src/utils/api.ts
+
+// This placeholder will be replaced by the entrypoint.sh script in the Docker container.
+// In a local dev environment, this will default to /api, assuming a dev server proxy is configured.
+const API_BASE_URL = '__VITE_API_BASE_URL__';
+
 interface Ingredient {
   Id: number;
   Name: string;
@@ -18,7 +23,7 @@ interface Potion {
 }
 
 export const fetchIngredients = async (): Promise<Ingredient[]> => {
-    const response = await fetch(`/api/ingredients`);
+    const response = await fetch(`${API_BASE_URL}/ingredients`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -27,7 +32,7 @@ export const fetchIngredients = async (): Promise<Ingredient[]> => {
   };
 
   export const fetchPotionSets = async (): Promise<PotionSet[]> => {
-    const response = await fetch(`/api/potionsets`);
+    const response = await fetch(`${API_BASE_URL}/potionsets`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -36,7 +41,7 @@ export const fetchIngredients = async (): Promise<Ingredient[]> => {
   };
 
   export const fetchPotionsInSet = async (setId: number): Promise<Potion[]> => {
-    const response = await fetch(`/api/potions?set_id=${setId}`);
+    const response = await fetch(`${API_BASE_URL}/potions?set_id=${setId}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
