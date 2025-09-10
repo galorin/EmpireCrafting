@@ -1,17 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=EB+Garamond:wght@400;500;700&display=swap');
 
 :root {
   /* Font Families */
-  --font-family-main: 'Uncial Antiqua', cursive;
+  --font-family-main: 'EB Garamond', serif;
+  --font-family-headings: 'MedievalSharp', cursive;
 
   /* Color Palette */
   --color-parchment: #f5f5dc;
   --color-ink: #3a3a3a;
   --color-ink-light: #5a5a5a;
   --color-border: #c2b8a3;
-  --color-highlight: #daa520; /* Gold */
-  --color-highlight-hover: #b8860b; /* DarkGoldenRod */
+  --color-highlight: #daa520;
+  --color-highlight-hover: #b8860b;
   --color-error: #9e2b2b;
+  --checkbox-size: 24px;
 
   /* AG Grid Theming */
   --ag-background-color: transparent;
@@ -23,6 +25,7 @@
   --ag-border-color: var(--color-border);
 }
 
+/* GENERAL */
 body {
   margin: 0;
   min-width: 320px;
@@ -31,10 +34,11 @@ body {
   background-color: var(--color-parchment);
   color: var(--color-ink);
   font-family: var(--font-family-main);
+  font-size: 16px;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-family-main);
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-family-headings);
   color: var(--color-ink);
   text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
@@ -42,10 +46,10 @@ h1, h2, h3, h4, h5, h6 {
 button {
   border-radius: 2px;
   border: 1px solid var(--color-border);
-  padding: 0.6em 1.2em;
+  padding: 0.4em 1.2em;
   font-size: 1em;
   font-weight: 500;
-  font-family: inherit;
+  font-family: var(--font-family-main);
   background-color: transparent;
   color: var(--color-ink);
   cursor: pointer;
@@ -63,54 +67,20 @@ button:focus-visible {
   outline: 2px auto var(--color-highlight);
 }
 
+/* LAYOUT */
 .app-container {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: auto auto 1fr; /* Three rows: Known Potions, Inventory, Recommended Sets */
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   width: 100%;
   gap: 1rem;
   padding: 1rem;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-ink-light);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink);
-}
-
-.ag-theme-alpine {
-  --ag-font-family: var(--font-family-main);
-  --ag-font-size: 1rem;
-  --ag-font-weight: bold;
-  --ag-background-color: transparent;
-  --ag-header-background-color: transparent;
-  --ag-odd-row-background-color: transparent;
-  --ag-row-hover-color: rgba(218, 165, 32, 0.1);
-  --ag-foreground-color: var(--color-ink);
-  --ag-header-foreground-color: var(--color-ink);
-  --ag-border-color: var(--color-border);
-  --ag-row-border-color: var(--color-border);
-  background-color: rgba(245, 245, 220, 0.5);
-  border: 1px solid var(--color-border);
-  border-radius: 5px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-}
-
 .potion-sets-section,
 .ingredients-section,
-.recommended-sets-container {
+.recommended-sets-container,
+.about-section {
   background-color: rgba(245, 245, 220, 0.5);
   border: 1px solid var(--color-border);
   border-radius: 5px;
@@ -118,196 +88,47 @@ button:focus-visible {
   padding: 1rem;
 }
 
-.potion-sets-section {
-  grid-column: 1 / span 12;
-  grid-row: 1;
-}
-
-.ingredients-section {
-  grid-column: 1 / span 12;
-  grid-row: 2;
-}
-
-.recommended-sets-container {
-  grid-column: 1 / span 12;
-  grid-row: 3;
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
+/* TABS */
+.tabs {
+  display: flex;
   gap: 1rem;
 }
 
-.best-potions-section-container {
-  grid-column: 1 / span 6;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.potion-details-section {
-  grid-column: 7 / span 6;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.potions-accordion {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.potion-card {
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease-in-out;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-}
-
-.potion-card:hover {
-  box-shadow: 3px 3px 7px rgba(0,0,0,0.3);
-}
-
-.potion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 1rem;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-size: 1rem;
-  font-weight: bold;
-}
-
-.potion-header:hover {
-  background-color: rgba(218, 165, 32, 0.1);
-}
-
-.potion-name {
-  color: var(--color-ink);
-}
-
-.potion-score {
-  font-weight: normal;
-  color: var(--color-highlight);
-  background-color: transparent;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.9em;
-}
-
-.potion-details-callout {
-  padding: 1rem;
-  background-color: rgba(245, 245, 220, 0.5);
-  border-top: 1px solid var(--color-border);
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.potion-details-callout h4 {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  color: var(--color-ink);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
-}
-
-.details-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.details-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.4rem 0;
-  color: var(--color-ink-light);
-}
-
-.details-list li span {
-  font-weight: bold;
-  color: var(--color-ink);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 0.5rem;
-}
-
-th,
-td {
-  border: 1px solid var(--color-border);
-  padding: 0.5rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  background-color: transparent;
-}
-
-.loading-message {
-  font-style: italic;
-  color: var(--color-ink-light);
-}
-
-.error-message {
-  color: var(--color-error);
-}
-
-.section-heading {
-  margin-bottom: 10px;
-  color: var(--color-ink);
-}
-
-.potion-sets-table {
+/* TABLES */
+table, .potion-sets-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
   table-layout: fixed;
 }
 
-.potion-sets-table-header {
-  background-color: transparent;
-  border-bottom: 2px solid var(--color-border);
-}
-
-.potion-sets-table-header-cell {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: bold;
-}
-
-.potion-sets-table-row {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.potion-sets-table-cell {
+th, td, .potion-sets-table-cell {
+  border: 1px solid var(--color-border);
   padding: 0.75rem;
   vertical-align: top;
+  word-break: break-word;
 }
 
+th, .potion-sets-table-header-cell {
+  background-color: transparent;
+  font-weight: 700;
+  text-align: left;
+}
+
+.potion-sets-table-header-cell:first-child,
 .potion-sets-table-cell:first-child {
-  width: 80px;
+  width: 10%; /* Slightly wider first column */
   text-align: center;
 }
 
 .potion-sets-table-summary {
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .potions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -318,59 +139,139 @@ th {
   border-radius: 2px;
 }
 
-.audit-log-container {
-  margin-top: 2rem;
-  padding: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
+/* CHECKBOXES - SKEUOMORPHIC PARCHEMENT */
+.potion-sets-table input[type="checkbox"] {
+  appearance: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  background: linear-gradient(145deg, #fdf8e3, #e6dcb0);
+  box-shadow: inset 2px 2px 5px rgba(255,255,255,0.6),
+              inset -2px -2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+.potion-sets-table input[type="checkbox"]:checked {
+  background: radial-gradient(circle, #e0ffff, #87ceeb);
+  border-color: #87ceeb;
+}
+
+/* INGREDIENT TABLE / AG GRID */
+.ingredient-table-container {
+  height: 400px;
+  width: 100%;
+}
+.ingredients-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  overflow: auto;
+}
+.ingredients-section .ingredient-table-container,
+.ingredients-section .ag-theme-alpine {
+  flex: 1 1 auto;
+  min-height: 400px;
+}
+
+.ag-theme-alpine {
+  --ag-font-family: var(--font-family-main);
+  --ag-font-size: 1rem;
+  --ag-font-weight: 500;
+  --ag-background-color: transparent;
+  --ag-header-background-color: transparent;
+  --ag-odd-row-background-color: transparent;
+  --ag-row-hover-color: var(--ag-row-hover);
+  --ag-foreground-color: var(--color-ink);
+  --ag-header-foreground-color: var(--color-ink);
+  --ag-border-color: var(--color-border);
+  --ag-row-border-color: var(--color-border);
   background-color: rgba(245, 245, 220, 0.5);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
   box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
 }
 
-.audit-log-columns {
-  display: flex;
-  gap: 2rem;
+/* DROP-CAP / LORE */
+.lore::first-letter,
+.lore p::first-letter {
+  float: left;
+  font-family: var(--font-family-headings);
+  font-size: 3.2rem;
+  line-height: 1;
+  margin-right: 0.25em;
+  margin-top: 0.05em;
+  color: #6b3e1f;
+  background: linear-gradient(135deg, #f6e27f, #d4af37, #b8860b);
+  padding: 0.1em 0.2em;
+  border: 2px solid #b8860b;
+  border-radius: 6px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.25);
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.45);
 }
 
-.audit-log-column {
-  flex: 1;
+/* MEDIA QUERIES */
+@media (min-width: 768px) {
+  .app-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(100px, auto);
+    gap: 1rem;
+  }
+  .tabs {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .potion-sets-section {
+    grid-column: 1 / span 7; /* Known sets narrower by 1 column */
+    grid-row: 2;
+  }
+  .ingredients-section {
+    grid-column: 8 / span 4; /* Left side moved left by one */
+    grid-row: 2;
+  }
+  .recommended-sets-container {
+    grid-column: 1 / span 12;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+  }
+  .best-potions-section-container { grid-column: 1 / span 6; }
+  .potion-details-section { grid-column: 7 / span 6; }
+  .about-section {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
-.audit-log-column h4 {
-  margin-top: 0;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.5rem;
+@media (min-width: 1024px) {
+  .best-potions-section-container { grid-column: 1 / span 4; }
+  .potion-details-section { grid-column: 5 / span 8; }
 }
 
-.audit-log-column ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* SCROLLBARS */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-light);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink);
 }
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 1rem;
-}
-
-.tab-link {
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border: none;
-  background-color: transparent;
-  font-size: 1rem;
-  font-weight: bold;
-  color: var(--color-ink-light);
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
-}
-
-.tab-link.active {
-  color: var(--color-ink);
-  border-bottom: 2px solid var(--color-highlight);
-}
-
-.tab-content {
-  padding: 1rem;
-}
+/*! CSS Used from: http://192.168.1.12:32456/assets/index-CKDg2MMm.css */
+::-webkit-scrollbar{width:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--color-ink-light);}
+::-webkit-scrollbar-thumb:hover{background:var(--color-ink);}
+td{border:1px solid var(--color-border);padding:.5rem;text-align:left;vertical-align:top;}
+.potion-sets-table-cell{padding:.75rem;vertical-align:top;}
+.potion-sets-table-summary{cursor:pointer;font-weight:700;}
+.potions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:1rem;}
+.potion-grid-item{border:1px solid var(--color-border);padding:1rem;border-radius:2px;}

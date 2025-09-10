@@ -14,7 +14,7 @@ const PotionSetsTable = React.memo(function PotionSetsTable({ potionSets, select
       </thead>
       <tbody>
         {potionSets.map((set) => {
-          const potions = potionsInSet.filter(p => p.SetId === set.Id);
+                    const potions = potionsInSet.filter(p => p.PotionSetId === set.Id);
           return (
             <tr key={set.Id} className="potion-sets-table-row">
               <td className="potion-sets-table-cell">
@@ -84,7 +84,7 @@ PotionSetsTable.propTypes = {
   potionsInSet: PropTypes.arrayOf(PropTypes.shape({
     Id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     Name: PropTypes.string.isRequired,
-    SetId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    PotionSetId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   })).isRequired,
   ingredients: PropTypes.array.isRequired,
 };

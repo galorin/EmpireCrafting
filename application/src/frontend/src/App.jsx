@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { fetchPotionSets, fetchPotionsInSet } from './utils/api';
+import { fetchPotionSets, fetchPotionsInSet, fetchIngredients } from './utils/api';
 
 // Dynamically import components
 const IngredientTable = lazy(() => import('./components/IngredientTable'));
@@ -7,16 +7,33 @@ const BestPotionsSection = lazy(() => import('./components/BestPotionsSection'))
 const SelectedSetsManager = lazy(() => import('./components/SelectedSetsManager'));
 const PotionDetailsSection = lazy(() => import('./components/PotionDetailsSection'));
 const About = lazy(() => import('./components/About'));
+const LegalPopup = lazy(() => import('./components/LegalPopup'));
 
 function App() {
   const [potionSets, setPotionSets] = useState([]);
   const [potionsInSet, setPotionsInSet] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const [inventory, setInventory] = useState({});
+  const [inventory, setInventory] = useState(() => {
+    const savedInventory = localStorage.getItem('inventory');
+    return savedInventory ? JSON.parse(savedInventory) : {};
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSets, setSelectedSets] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // New state for active tab
+  const [showLegalPopup, setShowLegalPopup] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem('hasConsentedToLocalStorage');
+    if (!consent) {
+      setShowLegalPopup(true);
+    }
+  }, []);
+
+  const handleAcceptLegal = () => {
+    localStorage.setItem('hasConsentedToLocalStorage', 'true');
+    setShowLegalPopup(false);
+  };
 
   const handleDataFetched = useCallback((fetchedIngredients) => {
     setIngredients(fetchedIngredients);
@@ -24,7 +41,17 @@ function App() {
     fetchedIngredients.forEach(ingredient => {
       newInventory[ingredient.Id] = ingredient.SessionInventory;
     });
-    setInventory(newInventory);
+
+    const savedIngredients = localStorage.getItem('ingredients');
+    if (!savedIngredients) {
+      localStorage.setItem('ingredients', JSON.stringify(fetchedIngredients));
+    }
+
+    const savedInventory = localStorage.getItem('inventory');
+    if (!savedInventory) {
+      localStorage.setItem('inventory', JSON.stringify(newInventory));
+      setInventory(newInventory);
+    }
   }, []);
 
   // Fetch Potion Sets
@@ -68,6 +95,21 @@ function App() {
     fetchPotions();
   }, [selectedSets, inventory]); // Re-run when selectedSets or inventory changes
 
+  useEffect(() => {
+    const hasConsented = localStorage.getItem('hasConsentedToLocalStorage') === 'true';
+    if (!showLegalPopup && hasConsented) {
+      const loadIngredients = async () => {
+        try {
+          const ingredientsData = await fetchIngredients();
+          handleDataFetched(ingredientsData);
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+      loadIngredients();
+    }
+  }, [showLegalPopup, handleDataFetched]);
+
   // Handle Set Selection
   const handleSetSelect = useCallback((setId) => {
     setSelectedSets((prevSelectedSets) => {
@@ -105,42 +147,41 @@ function App() {
         </button>
       </div>
 
-      <div className="tab-content">
-        <Suspense fallback={<div className="loading-message">Loading application...</div>}>
-          {activeTab === 'main' && (
-            <>
-              {/* Potion Sets Section (Known Potions) */}
-              <div className="potion-sets-section">
-                <SelectedSetsManager
-                  potionSets={potionSets}
-                  setPotionsInSet={setPotionsInSet}
-                  selectedSets={selectedSets}
-                  onSetSelect={handleSetSelect}
-                  potionsInSet={potionsInSet}
-                  ingredients={ingredients}
-                />
-              </div>
+      <Suspense fallback={<div className="loading-message">Loading application...</div>}>
+        {showLegalPopup && <LegalPopup onAccept={handleAcceptLegal} />}
+        {activeTab === 'main' && (
+          <>
+            {/* Potion Sets Section (Known Potions) */}
+            <div className="potion-sets-section">
+              <SelectedSetsManager
+                potionSets={potionSets}
+                setPotionsInSet={setPotionsInSet}
+                selectedSets={selectedSets}
+                onSetSelect={handleSetSelect}
+                potionsInSet={potionsInSet}
+                ingredients={ingredients}
+              />
+            </div>
 
-              {/* Ingredients Section (Inventory) */}
-              <div className="ingredients-section">
-                <IngredientTable onDataFetched={handleDataFetched} />
-              </div>
+            {/* Ingredients Section (Inventory) */}
+            <div className="ingredients-section">
+              <IngredientTable ingredients={ingredients} onDataFetched={handleDataFetched} />
+            </div>
 
-              {/* Recommended Sets Section (Best Potions and Potion Details) */}
-              <div className="recommended-sets-container">
-                <div className="best-potions-section-container">
-                  <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
-                </div>
-                <div className="potion-details-section">
-                  <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
-                </div>
+            {/* Recommended Sets Section (Best Potions and Potion Details) */}
+            <div className="recommended-sets-container">
+              <div className="best-potions-section-container">
+                <BestPotionsSection potions={potionsInSet} ingredients={ingredients} inventory={inventory} />
               </div>
-            </>
-          )}
+              <div className="potion-details-section">
+                <PotionDetailsSection potionsInSet={potionsInSet} ingredients={ingredients} inventory={inventory} />
+              </div>
+            </div>
+          </>
+        )}
 
-          {activeTab === 'about' && <About />}
-        </Suspense>
-      </div>
+        {activeTab === 'about' && <About />}
+      </Suspense>
     </div>
   );
 }

@@ -1,8 +1,38 @@
-// src/utils/potionCalculations.js
+// src/utils/potionCalculations.ts
 import { GUILD_PER_INGREDIENT } from './constants';
 import { findIngredientByName } from './helpers';
 
-export const calculatePotionCost = (potion, ingredients) => {
+interface Ingredient {
+  Id: number;
+  Name: string;
+  SessionPrice: number;
+  SessionInventory: number;
+}
+
+interface Potion {
+  Id: number;
+  Name: string;
+  Ingredients: { [key: string]: number };
+  ingredientCount?: number;
+  score?: number;
+  quantity?: number;
+}
+
+interface ProfitDetails {
+  sellPrice: number;
+  undercutAmount: number;
+  profitOverBaseCost: number;
+}
+
+interface Weights {
+  undercut: number;
+  profit: number;
+  ingredientCost: number;
+  price?: number;
+  inventory?: number;
+}
+
+export const calculatePotionCost = (potion: Potion, ingredients: Ingredient[]): number => {
   let totalCost = 0;
   if (potion.Ingredients) {
     for (const ingredientName in potion.Ingredients) {
@@ -15,7 +45,7 @@ export const calculatePotionCost = (potion, ingredients) => {
   return totalCost;
 };
 
-export const calculateGuildCost = (potion) => {
+export const calculateGuildCost = (potion: Potion): number => {
   if (!potion.Ingredients) return GUILD_PER_INGREDIENT;
 
   let totalIngredients = 0;
@@ -25,7 +55,7 @@ export const calculateGuildCost = (potion) => {
   return (totalIngredients + 1) * GUILD_PER_INGREDIENT;
 };
 
-export const calculatePotionProfit = (potion, ingredients) => {
+export const calculatePotionProfit = (potion: Potion, ingredients: Ingredient[]): ProfitDetails => {
   const cost = calculatePotionCost(potion, ingredients);
   const guildCost = calculateGuildCost(potion);
   const baseProfit = cost * 1.25;
@@ -40,7 +70,7 @@ export const calculatePotionProfit = (potion, ingredients) => {
   };
 };
 
-export const canMakePotion = (potion, currentInventory, ingredients) => {
+export const canMakePotion = (potion: Potion, currentInventory: { [key: number]: number }, ingredients: Ingredient[]): boolean => {
   if (!potion.Ingredients) return true;
   for (const ingredientName in potion.Ingredients) {
     const ingredient = findIngredientByName(ingredients, ingredientName);
@@ -53,7 +83,7 @@ export const canMakePotion = (potion, currentInventory, ingredients) => {
   return true;
 };
 
-export const consumeIngredients = (potion, currentInventory, ingredients) => {
+export const consumeIngredients = (potion: Potion, currentInventory: { [key: number]: number }, ingredients: Ingredient[]): void => {
   if (!potion.Ingredients) return;
   for (const ingredientName in potion.Ingredients) {
     const ingredient = findIngredientByName(ingredients, ingredientName); // Use the ingredients array here
@@ -64,7 +94,7 @@ export const consumeIngredients = (potion, currentInventory, ingredients) => {
   }
 };
 
-export const calculatePotionScore = (potion, ingredients, weights) => {
+export const calculatePotionScore = (potion: Potion, ingredients: Ingredient[], weights: Weights): number => {
   const profitDetails = calculatePotionProfit(potion, ingredients);
   const ingredientCost = calculatePotionCost(potion, ingredients);
 
@@ -82,7 +112,7 @@ export const calculatePotionScore = (potion, ingredients, weights) => {
   return score;
 };
 
-export const calculateMarketValueScore = (potion, ingredients, weights) => {
+export const calculateMarketValueScore = (potion: Potion, ingredients: Ingredient[], weights: Weights): number => {
   const profitDetails = calculatePotionProfit(potion, ingredients);
 
   // Find the ingredient with the highest price and lowest inventory
@@ -104,15 +134,15 @@ export const calculateMarketValueScore = (potion, ingredients, weights) => {
   // Calculate weighted score
   const score =
     weights.undercut * normalizedUndercut +
-    weights.price * normalizedPrice +
-    weights.inventory * normalizedInventory;
+    (weights.price ?? 0) * normalizedPrice +
+    (weights.inventory ?? 0) * normalizedInventory;
 
   return score;
 };
 
-export const calculateMaxPotions = (potions, inventory, ingredients) => {
+export const calculateMaxPotions = (potions: Potion[], inventory: { [key: number]: number }, ingredients: Ingredient[]): Potion[] => {
   let currentInventory = JSON.parse(JSON.stringify(inventory));
-  const craftedPotions = [];
+  const craftedPotions: Potion[] = [];
 
   // Add ingredient count to each potion
   const potionsWithIngredientCount = potions.map(potion => {
@@ -126,12 +156,78 @@ export const calculateMaxPotions = (potions, inventory, ingredients) => {
   });
 
   // Sort potions by ingredient count (ascending)
-  potionsWithIngredientCount.sort((a, b) => a.ingredientCount - b.ingredientCount);
+  potionsWithIngredientCount.sort((a, b) => (a.ingredientCount ?? 0) - (b.ingredientCount ?? 0));
 
   let potionMadeInLoop = true;
   while (potionMadeInLoop) {
     potionMadeInLoop = false;
     for (const potion of potionsWithIngredientCount) {
+      if (canMakePotion(potion, currentInventory, ingredients)) {
+        consumeIngredients(potion, currentInventory, ingredients);
+        const existingPotion = craftedPotions.find(p => p.Id === potion.Id);
+        if (existingPotion) {
+          existingPotion.quantity = (existingPotion.quantity || 1) + 1;
+        } else {
+          craftedPotions.push({ ...potion, quantity: 1 });
+        }
+        potionMadeInLoop = true;
+      }
+    }
+  }
+
+  return craftedPotions;
+};
+
+export const calculateBestPotionsToMake = (potions: Potion[], inventory: { [key: number]: number }, ingredients: Ingredient[], weights: Weights): Potion[] => {
+  let currentInventory = JSON.parse(JSON.stringify(inventory));
+  const craftedPotions: Potion[] = [];
+
+  // Calculate scores for all potions
+  const potionsWithScores = potions.map(potion => ({
+    ...potion,
+    score: calculatePotionScore(potion, ingredients, weights),
+  }));
+
+  // Sort potions by score (descending)
+  potionsWithScores.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  let potionMadeInLoop = true;
+  while (potionMadeInLoop) {
+    potionMadeInLoop = false;
+    for (const potion of potionsWithScores) {
+      if (canMakePotion(potion, currentInventory, ingredients)) {
+        consumeIngredients(potion, currentInventory, ingredients);
+        const existingPotion = craftedPotions.find(p => p.Id === potion.Id);
+        if (existingPotion) {
+          existingPotion.quantity = (existingPotion.quantity || 1) + 1;
+        } else {
+          craftedPotions.push({ ...potion, quantity: 1 });
+        }
+        potionMadeInLoop = true;
+      }
+    }
+  }
+
+  return craftedPotions;
+};
+
+export const calculateBestMarketPotions = (potions: Potion[], inventory: { [key: number]: number }, ingredients: Ingredient[], weights: Weights): Potion[] => {
+  let currentInventory = JSON.parse(JSON.stringify(inventory));
+  const craftedPotions: Potion[] = [];
+
+  // Calculate scores for all potions
+  const potionsWithScores = potions.map(potion => ({
+    ...potion,
+    score: calculateMarketValueScore(potion, ingredients, weights),
+  }));
+
+  // Sort potions by score (descending)
+  potionsWithScores.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  let potionMadeInLoop = true;
+  while (potionMadeInLoop) {
+    potionMadeInLoop = false;
+    for (const potion of potionsWithScores) {
       if (canMakePotion(potion, currentInventory, ingredients)) {
         consumeIngredients(potion, currentInventory, ingredients);
         const existingPotion = craftedPotions.find(p => p.Id === potion.Id);

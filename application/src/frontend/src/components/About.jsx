@@ -15,7 +15,7 @@ function About() {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/about`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
-        }S
+        }
         const text = await response.text();
         setReadmeContent(text);
       } catch (e) {
