@@ -2,10 +2,13 @@
 set -e
 
 # -------------------------------------------------------
-# EmpireCrafting deploy.sh
-# Handles CI/CD builds, Docker push, and GitOps updates
-# Supports develop, feature/bugfix, and release/x.y.z workflows
+# EmpireCrafting Modular Deploy Script
+#
+# Handles CI/CD builds, linting, Docker push, and GitOps updates.
+# Sources configuration from deploy.conf.
 # -------------------------------------------------------
+
+# --- Configuration and Setup ---
 
 # Color codes for logs
 RED='\033[0;31m'
@@ -16,128 +19,146 @@ NC='\033[0m'
 # Logging helpers
 log() { echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}"; }
 success() { echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}"; }
-error() { echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}"; }
+error() { echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] $1${NC}"; exit 1; }
 
-# Exit trap
-trap 'error "An error occurred. Exiting."' ERR
+# Exit trap for error handling
+trap 'error "An unexpected error occurred. Exiting."' ERR
 
-# ----------------------------
-# Determine current Git branch
-# ----------------------------
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-SHORT_COMMIT=$(git rev-parse --short HEAD)
-log "Current branch: $BRANCH"
-
-# ----------------------------
-# Determine image tags and GitOps target branch
-# ----------------------------
-if [[ "$BRANCH" =~ ^feature/.* || "$BRANCH" =~ ^bugfix/.* ]]; then
-    # Feature or bugfix branch → deploy to develop environment
-    BASE_BRANCH="develop"
-    BACKEND_TAG="develop-$SHORT_COMMIT"
-    FRONTEND_TAG="develop-$SHORT_COMMIT"
-    INGRESS_SUFFIX="-dev"
-elif [[ "$BRANCH" == "develop" ]]; then
-    BASE_BRANCH="develop"
-    BACKEND_TAG="develop-$SHORT_COMMIT"
-    FRONTEND_TAG="develop-$SHORT_COMMIT"
-    INGRESS_SUFFIX="-dev"
-elif [[ "$BRANCH" =~ ^release/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    # Canonical release branch: extract version number
-    BASE_BRANCH="release"
-    VERSION="${BRANCH#release/}"   # strips 'release/' → '1.0.0'
-    BACKEND_TAG="$VERSION"
-    FRONTEND_TAG="$VERSION"
-    INGRESS_SUFFIX=""
+# Load configuration
+CONFIG_FILE="$(dirname "$0")/deploy.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    log "Loaded configuration from $CONFIG_FILE"
 else
-    error "Unknown branch '$BRANCH'. Allowed: feature/*, bugfix/*, develop, release/x.y.z"
-    exit 1
+    error "Configuration file not found: $CONFIG_FILE"
 fi
 
-log "Base branch for GitOps: $BASE_BRANCH"
-log "Docker image tags: backend=$BACKEND_TAG, frontend=$FRONTEND_TAG"
+# Check for yq dependency
+if ! command -v yq &> /dev/null; then
+    error "'yq' is not installed. Please install it to proceed. (e.g., sudo snap install yq)"
+fi
 
-# ----------------------------
-# Docker build & push functions
-# ----------------------------
+# --- Git and Branching ---
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+SHORT_COMMIT=$(git rev-parse --short HEAD)
+log "Current branch: $BRANCH, Commit: $SHORT_COMMIT"
+
+# Determine image tags, GitOps target branch, and ingress host
+if [[ "$BRANCH" =~ ^(feature|bugfix)/.* || "$BRANCH" == "develop" ]]; then
+    BASE_BRANCH="develop"
+    IMAGE_TAG="develop-$SHORT_COMMIT"
+    INGRESS_HOST=$INGRESS_HOST_DEV
+elif [[ "$BRANCH" =~ ^release/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+    BASE_BRANCH="release"
+    IMAGE_TAG="${BASH_REMATCH[1]}" # Extract version from branch name
+    INGRESS_HOST=$INGRESS_HOST_PROD
+else
+    error "Unknown branch '$BRANCH'. Allowed: feature/*, bugfix/*, develop, release/x.y.z"
+fi
+
+log "GitOps Base Branch: $BASE_BRANCH"
+log "Docker Image Tag: $IMAGE_TAG"
+log "Ingress Host: $INGRESS_HOST"
+
+# --- Quality Gates ---
+
+lint_backend() {
+    log "Linting backend code with Cargo Clippy..."
+    (cd application/src/backend && cargo clippy -- -D warnings)
+    success "Backend linting passed."
+}
+
+lint_frontend() {
+    log "Linting frontend code with ESLint..."
+    (cd application/src/frontend && npm install && npm run lint)
+    success "Frontend linting passed."
+}
+
+# --- Docker Build & Push ---
+
 build_backend() {
-    log "Building backend Docker image..."
-    docker build -t empire-project-backend:latest -f application/src/backend/Dockerfile .
-    docker tag empire-project-backend:latest 192.168.1.11:5000/empire-project-backend:$BACKEND_TAG
+    local full_image_name="$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$IMAGE_TAG"
+    log "Building backend Docker image: $full_image_name"
+    docker build -t "$full_image_name" -f application/src/backend/Dockerfile .
     log "Pushing backend image..."
-    docker push 192.168.1.11:5000/empire-project-backend:$BACKEND_TAG
-    success "Backend image pushed: $BACKEND_TAG"
+    docker push "$full_image_name"
+    success "Backend image pushed."
 }
 
 build_frontend() {
-    log "Building frontend Docker image..."
-    docker build -t empire-project-frontend:latest -f application/src/frontend/Dockerfile --build-arg VITE_API_BASE_URL=http://192.168.1.11 .
-    docker tag empire-project-frontend:latest 192.168.1.11:5000/empire-project-frontend:$FRONTEND_TAG
-    docker push 192.168.1.11:5000/empire-project-frontend:$FRONTEND_TAG
-    success "Frontend image pushed: $FRONTEND_TAG"
+    local full_image_name="$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$IMAGE_TAG"
+    log "Building frontend Docker image: $full_image_name"
+    # No more build-time args for the frontend URL!
+    docker build -t "$full_image_name" -f application/src/frontend/Dockerfile .
+    log "Pushing frontend image..."
+    docker push "$full_image_name"
+    success "Frontend image pushed."
 }
 
-# ----------------------------
-# Update GitOps repo for Flux
-# ----------------------------
+# --- GitOps Update ---
+
 update_gitops() {
-    log "Updating cluster-config GitOps repo for Flux..."
+    log "Updating GitOps repository: $GITOPS_REPO_URL"
 
-    # Clone cluster-config if missing
-    [ -d ../cluster-config ] || git clone ssh://git@192.168.1.11:222/sarah/cluster-config.git ../cluster-config
-    cd ../cluster-config
+    # Clone or update the GitOps repo
+    [ -d "$GITOPS_REPO_PATH" ] || git clone "$GITOPS_REPO_URL" "$GITOPS_REPO_PATH"
+    (cd "$GITOPS_REPO_PATH" && git checkout "$BASE_BRANCH" && git pull)
 
-    # Checkout the correct branch (develop or release)
-    git checkout $BASE_BRANCH
-    git pull
+    # Use yq to safely update the YAML manifest
+    local manifest_path="$GITOPS_REPO_PATH/$GITOPS_APP_PATH"
+    log "Updating manifest: $manifest_path"
 
-    # Update deployment YAML with new image tags
-    sed -i "s|image: 192.168.1.11:5000/empire-project-backend:.*|image: 192.168.1.11:5000/empire-project-backend:$BACKEND_TAG|g" apps/EmpireCrafting/deployment.yaml
-    sed -i "s|image: 192.168.1.11:5000/empire-project-frontend:.*|image: 192.168.1.11:5000/empire-project-frontend:$FRONTEND_TAG|g" apps/EmpireCrafting/deployment.yaml
+    yq e -i ".spec.rules[0].host = \"$INGRESS_HOST\"" "$manifest_path"
+    yq e -i ".spec.template.spec.containers[0].image = \"$DOCKER_REGISTRY/$BACKEND_IMAGE_NAME:$IMAGE_TAG\"" "$manifest_path"
+    yq e -i ".spec.template.spec.containers[1].image = \"$DOCKER_REGISTRY/$FRONTEND_IMAGE_NAME:$IMAGE_TAG\"" "$manifest_path"
 
-    # Adjust ingress for develop builds
-    if [[ "$BASE_BRANCH" == "develop" ]]; then
-        sed -i "s|host: empire.145multimedia.co.uk|host: empire-dev.145multimedia.co.uk|g" apps/EmpireCrafting/deployment.yaml
-        # Optional: change service port if needed to avoid collisions
-    fi
+    # Commit and push changes
+    (cd "$GITOPS_REPO_PATH" && \
+        git add "$GITOPS_APP_PATH" && \
+        git commit -m "Update EmpireCrafting ($BASE_BRANCH): $IMAGE_TAG" && \
+        git push origin "$BASE_BRANCH")
 
-    git add apps/EmpireCrafting/deployment.yaml
-    git commit -m "Update EmpireCrafting images: backend=$BACKEND_TAG, frontend=$FRONTEND_TAG"
-    git push origin $BASE_BRANCH
-
-    success "GitOps repo updated successfully. Flux will reconcile automatically."
+    success "GitOps repo updated. Flux will reconcile shortly."
 }
 
-# ----------------------------
-# Main script logic
-# ----------------------------
-ARG="${1:--all}"
+# --- Main Script Logic ---
 
-case "$ARG" in
-    --all)
-        build_backend
-        build_frontend
-        update_gitops
-        ;;
-    --backend)
-        build_backend
-        ;;
-    --frontend)
-        build_frontend
-        ;;
-    --release)
-        build_backend
-        build_frontend
-        update_gitops
-        ;;
-    *)
-        echo -e "${RED}Usage: $0 [--all|--backend|--frontend|--release]${NC}"
-        exit 1
-        ;;
-esac
+main() {
+    local arg="${1:---all}"
 
-success "Deployment finished successfully."
+    case "$arg" in
+        --all)
+            lint_backend
+            lint_frontend
+            build_backend
+            build_frontend
+            update_gitops
+            ;; 
+        --backend)
+            lint_backend
+            build_backend
+            ;; 
+        --frontend)
+            lint_frontend
+            build_frontend
+            ;; 
+        --release)
+            lint_backend
+            lint_frontend
+            build_backend
+            build_frontend
+            update_gitops
+            ;; 
+        *)
+            error "Usage: $0 [--all|--backend|--frontend|--release]"
+            ;; 
+    esac
 
+    success "Deployment finished successfully."
+}
+
+main "$@"
 # ----------------------------
 # Notes / process reminders:
 # ----------------------------
